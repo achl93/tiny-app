@@ -37,10 +37,6 @@ app.get("/", (req, res) => {
   res.end("Hello!");
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
 app.get("/urls", (req, res) => {
   const id = req.cookies.user_id;
   let templateVars = {
@@ -48,15 +44,6 @@ app.get("/urls", (req, res) => {
   };
   res.render("urls_index", templateVars);
 })
-
-app.get("/urls/new", (req, res) => {
-  if (app.locals.user === undefined) {
-    res.redirect("/register");
-  }
-  else {
-    res.render("urls_new");
-  }
-});
 
 app.post("/urls", (req, res) => {
   let randomString = generateRandomString();
@@ -67,16 +54,31 @@ app.post("/urls", (req, res) => {
   res.redirect('http://localhost:8080/urls/'+randomString);
 });
 
+app.get("/urls/new", (req, res) => {
+  if (app.locals.user === undefined) {
+    res.redirect("/register");
+  }
+  else {
+    res.render("urls_new");
+  }
+});
+
 app.get("/u/:shortURL", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL].long;
   res.redirect(longURL);
 });
 
 app.get("/urls/:id", (req, res) => {
-  let templateVars = { 
-    shortURL: req.params.id
-  };
-  res.render("urls_show", templateVars);
+  const currCookie = req.cookies.user_id;
+  if (currCookie === urlDatabase[req.params.id].id) {
+    let templateVars = { 
+      shortURL: req.params.id
+    };
+    res.render("urls_show", templateVars);
+  }
+  else {
+    res.status(403).send("403: This link does not belong to you ಠ_ಠ");
+  }
 });
 
 app.post("/urls/:id/delete", (req, res) => {
@@ -138,6 +140,9 @@ app.post("/register", (req, res) => {
   if (req.body === undefined || req.body.password === undefined || req.body.email === undefined) {
     res.status(400).send("400: Invalid email or password ¯\_(ツ)_/¯");
   }
+  if (emailCollision(req.body.email)) {
+    res.status(400).send("400: This email address already exists in our database");
+  }
   else {
     users[randomID] = {};
     users[randomID].id = randomID;
@@ -153,6 +158,7 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+// Helper functions
 function generateRandomString() {
   let random = (Math.random()*2).toString(36);
   return random.slice(2, 8);
@@ -168,4 +174,13 @@ function urlsForUser(id) {
     }
   }
   return filteredObj;
+}
+
+function emailCollision(email) {
+  for (each in users) {
+    if (users[each].email === email) {
+      return true;
+    }
+  }
+  return false;
 }
