@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <% include ./partials/_header.ejs %>
+</head>
+<body>
+    <a href="http://localhost:8080/u/<%= shortURL %>">Short URL - <%= shortURL %></a>
+    <form method="POST" action="/urls/<%= shortURL %>/delete"><input type="submit" value="delete"></form>
+    <form method="POST" action="/urls/<%= shortURL %>/update"><input type="text" name="toBeUpdated" placeholder="http://"><input type="submit" value="update"></form>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <% include ./partials/_header.ejs %>
+</head>
+<body>
+    <ul>
+      <% for (each in urls) { %>
+      <li><%= urls[each] %> | <a href="http://localhost:8080/urls/<%= each %>">http://localhost:8080/urls/<%= each %></a>
+      <form method="POST" action="/urls/<%= each %>/delete"><input type="submit" value="delete"></form>
+      <a href="http://localhost:8080/urls/<%= each %>">Edit</a>
+      </li>
+      <% } %>
+    </ul>
+    <a href="http://localhost:8080/urls/new">Shorten your URL!</a>
+</body>
+</html>
