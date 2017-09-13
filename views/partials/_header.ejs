@@ -6,16 +6,13 @@
 </head>
 <body>
   <a href="http://localhost:8080/urls">Home</a>
-  <% if (username === undefined) { %>
-    <form method="POST" action="/login">
-      <label for="login">Login:
-        <input id="login" type="text" name="username">
-        <input type="submit" value="Go!">
-      </label>
-    </form>
-  <% } else { %>
-    <p style="font-weight: bold">Logged in as: <%= username %></p>
+  <% if (locals.user !== undefined) { %>
+    <p style="font-weight: bold">Logged in as: <%= locals.user %></p>
     <form method="POST" action="/logout"><input type="submit" value="Logout!"></form>
+  <% } else { %>
+    <p>You are not logged in</p>
+    <a href="http://localhost:8080/register">Register</a>
+    <a href="http://localhost:8080/login">Login</a>
   <% } %>
 </body>
 </html>
