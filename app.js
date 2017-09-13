@@ -61,7 +61,6 @@ app.post("/urls/:id/update", (req, res) => {
     urlDatabase[req.params.id] = req.body.toBeUpdated;
   }
   res.redirect("/urls");
-  // console.log(urlDatabase);
 })
 
 app.listen(PORT, () => {
@@ -70,6 +69,5 @@ app.listen(PORT, () => {
 
 function generateRandomString() {
   let random = (Math.random()*2).toString(36);
-  // console.log(random);
   return random.slice(2, 8);
 }
