@@ -6,7 +6,7 @@
 <body>
     <ul>
       <% for (each in urls) { %>
-      <li><%= urls[each] %> | <a href="http://localhost:8080/urls/<%= each %>">http://localhost:8080/urls/<%= each %></a>
+      <li><%= urls[each].long %> | <a href="http://localhost:8080/urls/<%= each %>">http://localhost:8080/urls/<%= each %></a>
       <form method="POST" action="/urls/<%= each %>/delete"><input type="submit" value="delete"></form>
       <a href="http://localhost:8080/urls/<%= each %>">Edit</a>
       </li>
