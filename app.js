@@ -1,3 +1,4 @@
+// Imports & requires //
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -6,16 +7,18 @@ const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
 const methodOverride = require('method-override');
 
+// App options //
 app.use(methodOverride('_method'));
 
 app.use(cookieSession({
   name: 'session',
-  keys: 'thisIsAKey'
+  keys: ['thisIsAKey']
 }));
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.set("view engine", "ejs");
 
+// App data //
 var urlDatabase = {
   "b2xVn2": {
     long: "http://www.lighthouselabs.ca",
@@ -42,6 +45,7 @@ var users = {
   }
 }
 
+// App routes //
 app.get("/", (req, res) => {
   res.format({
     'text/html': () => {
@@ -65,6 +69,7 @@ app.post("/urls", (req, res) => {
   urlDatabase[randomString].long = req.body.longURL;
   urlDatabase[randomString].id = currCookie;
   urlDatabase[randomString].visitCount = 0;
+  urlDatabase[randomString].uniqueVisits = new Set();
   res.redirect('http://localhost:8080/urls/'+randomString);
 });
 
@@ -80,6 +85,10 @@ app.get("/urls/new", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL].long;
   urlDatabase[req.params.shortURL].visitCount++;
+  if (urlDatabase[req.params.shortURL].uniqueVisits === undefined) {    // Catch for the two original
+    urlDatabase[req.params.shortURL].uniqueVisits = new Set();          // hardcoded database entries
+  }
+  urlDatabase[req.params.shortURL].uniqueVisits.add(req.session.user_id);
   res.redirect(longURL);
 });
 
@@ -88,7 +97,8 @@ app.get("/urls/:id", (req, res) => {
   if (currCookie === urlDatabase[req.params.id].id) {
     let templateVars = { 
       shortURL: req.params.id,
-      visits: urlDatabase[req.params.id].visitCount
+      visits: urlDatabase[req.params.id].visitCount,
+      uniques: urlDatabase[req.params.id].uniqueVisits.size 
     };
     res.render("urls_show", templateVars);
   }
@@ -113,7 +123,7 @@ app.post("/urls/:id/update", (req, res) => {
   const currCookie = req.session.user_id;
   if (currCookie === urlDatabase[req.params.id].id) {
     if (req.body.toBeUpdated.match(re) === null) {
-      console.log("Please add http:// to your URL"); // can use alert() if you wanted to let user know
+      console.log("Please add http:// to your URL");
     }
     else {
       urlDatabase[req.params.id].long = req.body.toBeUpdated;
@@ -142,7 +152,7 @@ app.get("/login", (req, res) => {
 })
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   app.locals.user = undefined;
   res.redirect("/urls");
 })
@@ -170,20 +180,21 @@ app.put("/register", (req, res) => {
   }
 })
 
+// Starts the server //
 app.listen(PORT, () => {
   console.log(`TinyApp listening on port ${PORT}!`);
 });
 
-// Helper functions
+// Helper functions //
 function generateRandomString() {
-  let random = (Math.random()*2).toString(36);
-  return random.slice(2, 8);
-}
+  let random = (Math.random()*2).toString(36);        // Random floating point converted into a string
+  return random.slice(2, 8);                          // using a radix base 36 and then sliced to return
+}                                                     // a random of length 6
 
 function urlsForUser(id) {
-  let filteredObj = {};
-  for (each in urlDatabase) {
-    if (id === urlDatabase[each].id) {
+  let filteredObj = {};                               // Acquires urls from database that belong to a
+  for (each in urlDatabase) {                         // user based on the passed in id and returns
+    if (id === urlDatabase[each].id) {                // an object
       filteredObj[each] = {};
       filteredObj[each].id = id;
       filteredObj[each].long = urlDatabase[each].long;
@@ -192,9 +203,9 @@ function urlsForUser(id) {
   return filteredObj;
 }
 
-function emailCollision(email) {
-  for (each in users) {
-    if (users[each].email === email) {
+function emailCollision(email) {                  
+  for (each in users) {                               // Compares the passed in email to the database
+    if (users[each].email === email) {                // to see if it already exists and returns a bool
       return true;
     }
   }
