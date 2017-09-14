@@ -5,7 +5,7 @@
   <!-- <link rel="stylesheet" type="text/css" href="http://localhost:8080/public/styles.css"> -->
 </head>
 <body>
-  <a href="http://localhost:8080/urls">Home</a>
+  <a href="http://localhost:8080/">Home</a>
   <% if (locals.user !== undefined) { %>
     <p style="font-weight: bold">Logged in as: <%= locals.user %></p>
     <form method="POST" action="/logout"><input type="submit" value="Logout!"></form>
