@@ -32,7 +32,7 @@ var urlDatabase = {
   }
 }
 
-var users = { 
+var users = {
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
@@ -42,6 +42,18 @@ var users = {
     id: "user2RandomID", 
     email: "user2@example.com", 
     password: "dishwasher-funk"
+  }
+}
+
+// Stores ALL visitors using shortened link
+var visitorLog = {
+  "userRandomID": {
+    time: ["1960-05-21T22:40:22.792Z"],
+    id: ["userRandomID"]
+  },
+  "user2RandomID": {
+    time: ["1993-09-21T22:40:22.792Z"],
+    id: ["user2RandomID"]
   }
 }
 
@@ -55,21 +67,24 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const id = req.session.user_id;
+  const currCookie = req.session.user_id;
   let templateVars = {
-    urls: urlsForUser(id)
+    urls: urlsForUser(currCookie)
   };
   res.render("urls_index", templateVars);
 })
 
 app.post("/urls", (req, res) => {
-  let randomString = generateRandomString();
+  const randomString = generateRandomString();
   const currCookie = req.session.user_id;
   urlDatabase[randomString] = {};
   urlDatabase[randomString].long = req.body.longURL;
   urlDatabase[randomString].id = currCookie;
   urlDatabase[randomString].visitCount = 0;
   urlDatabase[randomString].uniqueVisits = new Set();
+  visitorLog[randomString] = {};
+  visitorLog[randomString].time = [];
+  visitorLog[randomString].id = [];
   res.redirect('http://localhost:8080/urls/'+randomString);
 });
 
@@ -83,12 +98,15 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  let longURL = urlDatabase[req.params.shortURL].long;
+  const longURL = urlDatabase[req.params.shortURL].long;
+  const timestamp = new Date();
   urlDatabase[req.params.shortURL].visitCount++;
   if (urlDatabase[req.params.shortURL].uniqueVisits === undefined) {    // Catch for the two original
     urlDatabase[req.params.shortURL].uniqueVisits = new Set();          // hardcoded database entries
   }
   urlDatabase[req.params.shortURL].uniqueVisits.add(req.session.user_id);
+  visitorLog[req.params.shortURL].time.push(timestamp);
+  visitorLog[req.params.shortURL].id.push(req.params.shortURL);
   res.redirect(longURL);
 });
 
@@ -98,7 +116,9 @@ app.get("/urls/:id", (req, res) => {
     let templateVars = { 
       shortURL: req.params.id,
       visits: urlDatabase[req.params.id].visitCount,
-      uniques: urlDatabase[req.params.id].uniqueVisits.size 
+      uniques: urlDatabase[req.params.id].uniqueVisits.size,
+      time: visitorLog[req.params.id].time,
+      id: visitorLog[req.params.id].id
     };
     res.render("urls_show", templateVars);
   }
@@ -162,7 +182,7 @@ app.get("/register", (req, res) => {
 })
 
 app.put("/register", (req, res) => {
-  let randomID = generateRandomString();
+  const randomID = generateRandomString();
   if (req.body === undefined || req.body.password === undefined || req.body.email === undefined) {
     res.status(400).send("400: Invalid email or password ¯\_(ツ)_/¯");
   }
@@ -187,7 +207,7 @@ app.listen(PORT, () => {
 
 // Helper functions //
 function generateRandomString() {
-  let random = (Math.random()*2).toString(36);        // Random floating point converted into a string
+  const random = (Math.random()*2).toString(36);        // Random floating point converted into a string
   return random.slice(2, 8);                          // using a radix base 36 and then sliced to return
 }                                                     // a random of length 6
 
