@@ -1,10 +1,14 @@
 var express = require("express");
 var app = express();
 var PORT = process.env.PORT || 8080;
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bodyParser = require("body-parser");
+const bcrypt = require('bcrypt');
 
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: 'thisIsAKey'
+}));
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.set("view engine", "ejs");
@@ -38,7 +42,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const id = req.cookies.user_id;
+  const id = req.session.user_id;
   let templateVars = {
     urls: urlsForUser(id)
   };
@@ -47,7 +51,7 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let randomString = generateRandomString();
-  const currCookie = req.cookies.user_id;
+  const currCookie = req.session.user_id;
   urlDatabase[randomString] = {};
   urlDatabase[randomString].long = req.body.longURL;
   urlDatabase[randomString].id = currCookie;
@@ -69,7 +73,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const currCookie = req.cookies.user_id;
+  const currCookie = req.session.user_id;
   if (currCookie === urlDatabase[req.params.id].id) {
     let templateVars = { 
       shortURL: req.params.id
@@ -82,7 +86,7 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  const currCookie = req.cookies.user_id;
+  const currCookie = req.session.user_id;
   if (currCookie === urlDatabase[req.params.id].id) {
     delete urlDatabase[req.params.id];
     res.redirect("/urls");
@@ -94,7 +98,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 app.post("/urls/:id/update", (req, res) => {
   const re = /http:\/\//;
-  const currCookie = req.cookies.user_id;
+  const currCookie = req.session.user_id;
   if (currCookie === urlDatabase[req.params.id].id) {
     if (req.body.toBeUpdated.match(re) === null) {
       console.log("Please add http:// to your URL"); // can use alert() if you wanted to let user know
@@ -111,9 +115,10 @@ app.post("/urls/:id/update", (req, res) => {
 
 app.post("/login", (req, res) => {
   for (eachUser in users) {
-    if (users[eachUser].email === req.body.email && users[eachUser].password === req.body.password) {
+    console.log(users[eachUser].password);
+    if (users[eachUser].email === req.body.email && bcrypt.compareSync(req.body.password, users[eachUser].password)) {
       app.locals.user = req.body.email;
-      res.cookie("user_id", users[eachUser].id);
+      req.session.user_id = users[eachUser].id;
       res.redirect("/");
       return;
     }
@@ -147,9 +152,9 @@ app.post("/register", (req, res) => {
     users[randomID] = {};
     users[randomID].id = randomID;
     users[randomID].email = req.body.email;
-    users[randomID].password = req.body.password;
+    users[randomID].password = bcrypt.hashSync(req.body.password, 10);
     app.locals.user = req.body.email;
-    res.cookie("user_id", randomID);
+    req.session.user_id = randomID;
     res.redirect("/urls");
   }
 })
