@@ -85,16 +85,10 @@ app.post("/urls", (req, res) => {
     visitCount: 0,
     uniqueVisits: new Set()
   };
-  // urlDatabase[randomString].long = req.body.longURL;
-  // urlDatabase[randomString].id = currCookie;
-  // urlDatabase[randomString].visitCount = 0;
-  // urlDatabase[randomString].uniqueVisits = new Set();
   visitorLog[randomString] = {
     times: [],
     ids: []
   };
-  // visitorLog[randomString].time = [];
-  // visitorLog[randomString].id = [];
   res.redirect('http://localhost:8080/urls/'+randomString);
 });
 
@@ -113,8 +107,8 @@ app.get("/u/:shortURL", (req, res) => {
   const url = urlDatabase[req.params.shortURL];
   const visitorDB = visitorLog[req.params.shortURL];
   url.visitCount++;
-  if (!url.uniqueVisits) {                  // Catch for the two original
-    url.uniqueVisits = new Set();           // hardcoded database entries
+  if (!url.uniqueVisits) {                            
+    url.uniqueVisits = new Set();
   }
   url.uniqueVisits.add(req.session.user_id);
   visitorDB.times.push(timestamp);
@@ -207,9 +201,6 @@ app.put("/register", (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10)
     };
-    // users[randomID].id = randomID;
-    // users[randomID].email = req.body.email;
-    // users[randomID].password = bcrypt.hashSync(req.body.password, 10);
     app.locals.user = req.body.email;
     req.session.user_id = randomID;
     res.redirect("/urls");
@@ -235,8 +226,6 @@ function urlsForUser(id) {
         id: id,
         long: urlDatabase[each].long
       };
-      // filteredObj[each].id = id;
-      // filteredObj[each].long = urlDatabase[each].long;
     }
   }
   return filteredObj;
