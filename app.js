@@ -48,12 +48,12 @@ var users = {
 // Stores ALL visitors using shortened link
 var visitorLog = {
   "userRandomID": {
-    time: ["1960-05-21T22:40:22.792Z"],
-    id: ["userRandomID"]
+    times: ["1960-05-21T22:40:22.792Z"],
+    ids: ["userRandomID"]
   },
   "user2RandomID": {
-    time: ["1993-09-21T22:40:22.792Z"],
-    id: ["user2RandomID"]
+    times: ["1993-09-21T22:40:22.792Z"],
+    ids: ["user2RandomID"]
   }
 }
 
@@ -70,7 +70,7 @@ app.get("/", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const currCookie = req.session.user_id;
-  let templateVars = {
+  const templateVars = {
     urls: urlsForUser(currCookie)
   };
   res.render("urls_index", templateVars);
@@ -79,14 +79,22 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
   const randomString = generateRandomString();
   const currCookie = req.session.user_id;
-  urlDatabase[randomString] = {};
-  urlDatabase[randomString].long = req.body.longURL;
-  urlDatabase[randomString].id = currCookie;
-  urlDatabase[randomString].visitCount = 0;
-  urlDatabase[randomString].uniqueVisits = new Set();
-  visitorLog[randomString] = {};
-  visitorLog[randomString].time = [];
-  visitorLog[randomString].id = [];
+  urlDatabase[randomString] = {
+    long: req.body.longURL,
+    id: currCookie,
+    visitCount: 0,
+    uniqueVisits: new Set()
+  };
+  // urlDatabase[randomString].long = req.body.longURL;
+  // urlDatabase[randomString].id = currCookie;
+  // urlDatabase[randomString].visitCount = 0;
+  // urlDatabase[randomString].uniqueVisits = new Set();
+  visitorLog[randomString] = {
+    times: [],
+    ids: []
+  };
+  // visitorLog[randomString].time = [];
+  // visitorLog[randomString].id = [];
   res.redirect('http://localhost:8080/urls/'+randomString);
 });
 
@@ -102,25 +110,27 @@ app.get("/urls/new", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].long;
   const timestamp = new Date();
-  urlDatabase[req.params.shortURL].visitCount++;
-  if (urlDatabase[req.params.shortURL].uniqueVisits === undefined) {    // Catch for the two original
-    urlDatabase[req.params.shortURL].uniqueVisits = new Set();          // hardcoded database entries
+  const url = urlDatabase[req.params.shortURL];
+  const visitorDB = visitorLog[req.params.shortURL];
+  url.visitCount++;
+  if (!url.uniqueVisits) {                  // Catch for the two original
+    url.uniqueVisits = new Set();           // hardcoded database entries
   }
-  urlDatabase[req.params.shortURL].uniqueVisits.add(req.session.user_id);
-  visitorLog[req.params.shortURL].time.push(timestamp);
-  visitorLog[req.params.shortURL].id.push(req.session.user_id);
+  url.uniqueVisits.add(req.session.user_id);
+  visitorDB.times.push(timestamp);
+  visitorDB.ids.push(req.session.user_id);
   res.redirect(longURL);
 });
 
 app.get("/urls/:id", (req, res) => {
   const currCookie = req.session.user_id;
   if (currCookie === urlDatabase[req.params.id].id) {
-    let templateVars = { 
+    const templateVars = { 
       shortURL: req.params.id,
       visits: urlDatabase[req.params.id].visitCount,
       uniques: urlDatabase[req.params.id].uniqueVisits.size,
-      time: visitorLog[req.params.id].time,
-      id: visitorLog[req.params.id].id
+      times: visitorLog[req.params.id].times,
+      ids: visitorLog[req.params.id].ids
     };
     res.render("urls_show", templateVars);
   }
@@ -145,7 +155,7 @@ app.post("/urls/:id/update", (req, res) => {
   const currCookie = req.session.user_id;
   if (currCookie === urlDatabase[req.params.id].id) {
     if (req.body.toBeUpdated.match(re) === null) {
-      console.log("Please add http:// to your URL");
+      console.log("http:// not in the URL... No changes made & redirecting user back to /urls");
     }
     else {
       urlDatabase[req.params.id].long = req.body.toBeUpdated;
@@ -185,17 +195,21 @@ app.get("/register", (req, res) => {
 
 app.put("/register", (req, res) => {
   const randomID = generateRandomString();
-  if (req.body === undefined || req.body.password === undefined || req.body.email === undefined) {
+  if (!req.body || !req.body.password || !req.body.email) {
     res.status(400).send("400: Invalid email or password ¯\_(ツ)_/¯");
   }
   if (emailCollision(req.body.email)) {
     res.status(400).send("400: This email address already exists in our database");
   }
   else {
-    users[randomID] = {};
-    users[randomID].id = randomID;
-    users[randomID].email = req.body.email;
-    users[randomID].password = bcrypt.hashSync(req.body.password, 10);
+    users[randomID] = {
+      id: randomID,
+      email: req.body.email,
+      password: bcrypt.hashSync(req.body.password, 10)
+    };
+    // users[randomID].id = randomID;
+    // users[randomID].email = req.body.email;
+    // users[randomID].password = bcrypt.hashSync(req.body.password, 10);
     app.locals.user = req.body.email;
     req.session.user_id = randomID;
     res.redirect("/urls");
@@ -209,7 +223,7 @@ app.listen(PORT, () => {
 
 // Helper functions //
 function generateRandomString() {
-  const random = (Math.random()*2).toString(36);        // Random floating point converted into a string
+  const random = (Math.random()*2).toString(36);      // Random floating point converted into a string
   return random.slice(2, 8);                          // using a radix base 36 and then sliced to return
 }                                                     // a random of length 6
 
@@ -217,17 +231,20 @@ function urlsForUser(id) {
   let filteredObj = {};                               // Acquires urls from database that belong to a
   for (each in urlDatabase) {                         // user based on the passed in id and returns
     if (id === urlDatabase[each].id) {                // an object
-      filteredObj[each] = {};
-      filteredObj[each].id = id;
-      filteredObj[each].long = urlDatabase[each].long;
+      filteredObj[each] = {
+        id: id,
+        long: urlDatabase[each].long
+      };
+      // filteredObj[each].id = id;
+      // filteredObj[each].long = urlDatabase[each].long;
     }
   }
   return filteredObj;
 }
 
 function emailCollision(email) {                  
-  for (each in users) {                               // Compares the passed in email to the database
-    if (users[each].email === email) {                // to see if it already exists and returns a bool
+  for (user in users) {                               // Compares the passed in email to the database
+    if (users[user].email === email) {                // to see if it already exists and returns a bool
       return true;
     }
   }
