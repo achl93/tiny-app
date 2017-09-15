@@ -117,8 +117,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const currCookie = req.session.user_id;
-  if (currCookie === urlDatabase[req.params.id].id) {
+  if (authorized(req)) {
     const templateVars = { 
       shortURL: req.params.id,
       visits: urlDatabase[req.params.id].visitCount,
@@ -129,25 +128,23 @@ app.get("/urls/:id", (req, res) => {
     res.render("urls_show", templateVars);
   }
   else {
-    res.status(403).send("403: This link does not belong to you ಠ_ಠ");
+    next();
   }
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  const currCookie = req.session.user_id;
-  if (currCookie === urlDatabase[req.params.id].id) {
+  if (authorized(req)) {
     delete urlDatabase[req.params.id];
     res.redirect("/urls");
   }
   else {
-    res.status(403).send("403: This link does not belong to you ಠ_ಠ");
+    next();
   }
 })
 
 app.post("/urls/:id/update", (req, res) => {
   const re = /http:\/\//;
-  const currCookie = req.session.user_id;
-  if (currCookie === urlDatabase[req.params.id].id) {
+  if (authorized(req)) {
     if (req.body.toBeUpdated.match(re) === null) {
       console.log("http:// not in the URL... No changes made & redirecting user back to /urls");
     }
@@ -157,11 +154,11 @@ app.post("/urls/:id/update", (req, res) => {
     res.redirect("/urls");
   }
   else {
-    res.status(403).send("403: This link does not belong to you ಠ_ಠ");
+    next();
   }
 })
 
-app.put("/login", (req, res) => {
+app.put("/login", (req, res, next) => {
   for (eachUser in users) {
     if (users[eachUser].email === req.body.email && bcrypt.compareSync(req.body.password, users[eachUser].password)) {
       app.locals.user = req.body.email;
@@ -170,7 +167,7 @@ app.put("/login", (req, res) => {
       return;
     }
   }
-  res.status(403).send("403: Invalid email or password ಠ_ಠ");
+  next(new Error('Invalid email or password'));
 })
 
 app.get("/login", (req, res) => {
@@ -190,10 +187,10 @@ app.get("/register", (req, res) => {
 app.put("/register", (req, res) => {
   const randomID = generateRandomString();
   if (!req.body || !req.body.password || !req.body.email) {
-    res.status(400).send("400: Invalid email or password ¯\_(ツ)_/¯");
+    next(new Error('Invalid email or password'));
   }
   if (emailCollision(req.body.email)) {
-    res.status(400).send("400: This email address already exists in our database");
+    next(new Error('Invalid email or password'));
   }
   else {
     users[randomID] = {
@@ -205,6 +202,20 @@ app.put("/register", (req, res) => {
     req.session.user_id = randomID;
     res.redirect("/urls");
   }
+})
+
+// Error handlers //
+app.use(function errHandler400(err, req, res, next) {
+  if (err.message === 'Invalid email or password') {
+    res.status(400).send({Error: '400: ' + err});
+  }
+  else {
+    next(err);
+  }
+})
+
+app.use(function errHandler403(err, req, res, next) {
+  res.status(403).send({Error: '403: This link does not belong to you'});
 })
 
 // Starts the server //
@@ -238,4 +249,14 @@ function emailCollision(email) {
     }
   }
   return false;
+}
+
+function authorized(req) {                            // Checks user session to make sure they are
+  const currCookie = req.session.user_id;             // allowed to do a certain action
+  if (currCookie === urlDatabase[req.params.id].id) {
+    return true;
+  }
+  else {
+    return false;
+  }
 }
