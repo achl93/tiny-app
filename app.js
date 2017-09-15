@@ -106,7 +106,7 @@ app.get("/u/:shortURL", (req, res) => {
   }
   urlDatabase[req.params.shortURL].uniqueVisits.add(req.session.user_id);
   visitorLog[req.params.shortURL].time.push(timestamp);
-  visitorLog[req.params.shortURL].id.push(req.params.shortURL);
+  visitorLog[req.params.shortURL].id.push(req.session.user_id);
   res.redirect(longURL);
 });
 
