@@ -61,7 +61,9 @@ var visitorLog = {
 app.get("/", (req, res) => {
   res.format({
     'text/html': () => {
-      res.send('<p>Hello! Here are your <a href="http://localhost:8080/urls">urls</a>.</p>');
+      res.send(
+        '<h1>Welcome to TinyApp!</h1><p>Hello! Here are your <a href="http://localhost:8080/urls">urls</a>.</p>'
+      );
     }
   })
 });
@@ -160,7 +162,7 @@ app.put("/login", (req, res) => {
     if (users[eachUser].email === req.body.email && bcrypt.compareSync(req.body.password, users[eachUser].password)) {
       app.locals.user = req.body.email;
       req.session.user_id = users[eachUser].id;
-      res.redirect("/");
+      res.redirect("/urls");
       return;
     }
   }

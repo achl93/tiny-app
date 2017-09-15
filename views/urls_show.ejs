@@ -15,8 +15,8 @@
 </head>
 <body>
     <p>Short URL - <a href="http://localhost:8080/u/<%= shortURL %>">http://localhost:8080/u/<%= shortURL %></a> | Visits: <%= visits %> | Unique Visitors: <%= uniques %></p>
-    <form method="POST" action="/urls/<%= shortURL %>/delete"><input type="submit" value="delete"></form>
-    <form method="POST" action="/urls/<%= shortURL %>/update"><input type="text" name="toBeUpdated" placeholder="http://"><input type="submit" value="update"></form>
+    <form method="POST" action="/urls/<%= shortURL %>/delete"><input type="submit" value="Delete"></form>
+    <form method="POST" action="/urls/<%= shortURL %>/update"><input type="text" name="toBeUpdated" placeholder="http://"><input type="submit" value="Update"></form>
     <table>
       <tr>
         <th>ID</th>

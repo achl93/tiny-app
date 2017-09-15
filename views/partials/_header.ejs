@@ -5,10 +5,13 @@
   <!-- <link rel="stylesheet" type="text/css" href="http://localhost:8080/public/styles.css"> -->
 </head>
 <body>
-  <a href="http://localhost:8080/">Home</a>
+  <p>
+    <a href="http://localhost:8080/">Home</a>
+    <a href="http://localhost:8080/urls">URLs</a>
+  </p>
   <% if (locals.user !== undefined) { %>
     <p style="font-weight: bold">Logged in as: <%= locals.user %></p>
-    <form method="POST" action="/logout"><input type="submit" value="Logout!"></form>
+    <form method="POST" action="/logout"><input type="submit" value="Logout"></form>
   <% } else { %>
     <p>You are not logged in</p>
     <a href="http://localhost:8080/register">Register</a>
