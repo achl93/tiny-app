@@ -127,9 +127,7 @@ app.get("/urls/:id", (req, res) => {
     };
     res.render("urls_show", templateVars);
   }
-  else {
-    next();
-  }
+  next();
 });
 
 app.post("/urls/:id/delete", (req, res) => {
@@ -137,9 +135,7 @@ app.post("/urls/:id/delete", (req, res) => {
     delete urlDatabase[req.params.id];
     res.redirect("/urls");
   }
-  else {
-    next();
-  }
+  next();
 })
 
 app.post("/urls/:id/update", (req, res) => {
@@ -153,9 +149,7 @@ app.post("/urls/:id/update", (req, res) => {
     }
     res.redirect("/urls");
   }
-  else {
-    next();
-  }
+  next();
 })
 
 app.put("/login", (req, res, next) => {
@@ -192,16 +186,14 @@ app.put("/register", (req, res) => {
   if (emailCollision(req.body.email)) {
     next(new Error('Invalid email or password'));
   }
-  else {
-    users[randomID] = {
-      id: randomID,
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 10)
-    };
-    app.locals.user = req.body.email;
-    req.session.user_id = randomID;
-    res.redirect("/urls");
-  }
+  users[randomID] = {
+    id: randomID,
+    email: req.body.email,
+    password: bcrypt.hashSync(req.body.password, 10)
+  };
+  app.locals.user = req.body.email;
+  req.session.user_id = randomID;
+  res.redirect("/urls");
 })
 
 // Error handlers //
@@ -231,11 +223,11 @@ function generateRandomString() {
 
 function urlsForUser(id) {
   let filteredObj = {};                               // Acquires urls from database that belong to a
-  for (each in urlDatabase) {                         // user based on the passed in id and returns
-    if (id === urlDatabase[each].id) {                // an object
-      filteredObj[each] = {
+  for (url in urlDatabase) {                         // user based on the passed in id and returns
+    if (id === urlDatabase[url].id) {                // an object
+      filteredObj[url] = {
         id: id,
-        long: urlDatabase[each].long
+        long: urlDatabase[url].long
       };
     }
   }
